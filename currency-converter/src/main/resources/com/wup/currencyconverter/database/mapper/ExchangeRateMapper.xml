@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.wup.currencyconverter.database.mapper.ExchangeRateMapper">
+    <resultMap id="exchangeRateResultMap" type="ExchangeRate">
+        <id property="id" column="id"/>
+
+        <result property="buyRate" column="buy_rate"/>
+
+        <result property="sellRate" column="sell_rate"/>
+
+        <association property="from" javaType="Currency">
+            <id property="id" column="from_id"/>
+            <id property="name" column="from_name"/>
+        </association>
+
+        <association property="to" javaType="Currency">
+            <id property="id" column="to_id"/>
+            <id property="name" column="to_name"/>
+        </association>
+    </resultMap>
+
+    <insert id="create" keyProperty="exchangeRate.id" keyColumn="id" useGeneratedKeys="true">
+        INSERT INTO exchange_rate
+          (currency_from, currency_to, buy_rate, sell_rate)
+        VALUES
+          (#{exchangeRate.from.id}, #{exchangeRate.to.id}, #{exchangeRate.buyRate}, #{exchangeRate.sellRate})
+    </insert>
+
+    <update id="update">
+      UPDATE exchange_rate SET
+        currency_from = #{exchangeRate.from.id},
+        currency_to = #{exchangeRate.to.id},
+        buy_rate = #{exchangeRate.buyRate},
+        sell_rate = #{exchangeRate.sellRate}
+      WHERE
+        id = #{exchangeRate.id}
+    </update>
+
+    <delete id="delete">
+        DELETE FROM exchange_rate WHERE id = #{exchangeRate.id}
+    </delete>
+
+    <sql id="selectExchangeRate">
+      SELECT
+        exchange_rate.id    AS id,
+        from_currency.id    AS from_id,
+        from_currency.name  AS from_name,
+        to_currency.id      AS to_id,
+        to_currency.name    AS to_name,
+        buy_rate            AS buy_rate,
+        sell_rate           AS sell_rate
+      FROM
+        exchange_rate
+      INNER JOIN
+        currency from_currency ON exchange_rate.currency_from = from_currency.id
+      INNER JOIN
+        currency to_currency ON exchange_rate.currency_to = to_currency.id
+    </sql>
+
+    <sql id="orderBy">
+      ORDER BY exchange_rate.id ASC
+    </sql>
+
+    <select id="getAll" resultMap="exchangeRateResultMap">
+      <include refid="selectExchangeRate"/>
+    </select>
+
+    <select id="getFrom" resultMap="exchangeRateResultMap">
+      <include refid="selectExchangeRate"/>
+      <where>
+        from_currency.id = #{from.id}
+      </where>
+      <include refid="orderBy"/>
+    </select>
+
+    <select id="getFromTo" resultMap="exchangeRateResultMap">
+        <include refid="selectExchangeRate"/>
+        <where>
+            from_currency.id = #{from.id} AND to_currency.id = #{to.id}
+        </where>
+        <include refid="orderBy"/>
+    </select>
+</mapper>
